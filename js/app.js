@@ -20,32 +20,25 @@ const saveSettings = (patch) =>
 // ============================================================
 
 const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
 
 let state = { phase: "disconnected", mode: "dpad", config: null };
 const update = (patch) => { state = { ...state, ...patch }; render(state); };
 
 const render = (s) => {
-  const dot = $("[data-bind='status-dot']");
-  const text = $("[data-bind='status-text']");
-  const setupView = $("[data-view='setup']");
-  const remoteView = $("[data-view='remote']");
+  const status = $("#status");
+  const phaseClass = s.phase === "reconnecting" ? "connecting" : s.phase;
+  status.className = phaseClass;
 
-  dot.className = "status-dot" + (
-    s.phase === "connected" ? " connected" :
-    s.phase === "connecting" || s.phase === "reconnecting" ? " connecting" : ""
-  );
+  const setupEls = $$("[data-view='setup']");
+  const remoteEls = $$("[data-view='remote']");
+  const isConnected = s.phase === "connected";
 
-  const labels = {
-    disconnected: "Disconnected",
-    connecting: "Connecting…",
-    connected: "Connected",
-    reconnecting: "Reconnecting…",
-    "auth-failed": "Auth failed — check secret",
-  };
-  text.textContent = labels[s.phase] ?? s.phase;
-
-  setupView.hidden = s.phase === "connected";
-  remoteView.hidden = s.phase !== "connected";
+  setupEls.forEach((el) => { el.hidden = isConnected; });
+  remoteEls.forEach((el) => {
+    if (el.id === "keyboard-panel") return;
+    el.hidden = !isConnected;
+  });
 };
 
 let session = null;
@@ -69,6 +62,11 @@ const handleConnect = () => {
   startSession(host, secret);
 };
 
+const handleSettings = () => {
+  if (session) session.stop();
+  update({ phase: "disconnected" });
+};
+
 const bindEvents = () => {
   $("[data-action='connect']").addEventListener("click", handleConnect);
 
@@ -79,6 +77,8 @@ const bindEvents = () => {
   $("[data-bind='secret-input']").addEventListener("keydown", (e) => {
     if (e.key === "Enter") handleConnect();
   });
+
+  $("[data-action='settings']").addEventListener("click", handleSettings);
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible" && session) session.reconnectNow();

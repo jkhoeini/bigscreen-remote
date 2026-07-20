@@ -1,5 +1,5 @@
 // Bump CACHE on every deploy — this is the only update mechanism.
-const CACHE = 'bigscreen-remote-v3';
+const CACHE = 'bigscreen-remote-v4';
 
 const PRECACHE = [
   './',
