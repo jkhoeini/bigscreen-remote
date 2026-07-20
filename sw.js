@@ -1,10 +1,9 @@
 // Bump CACHE on every deploy — this is the only update mechanism.
-const CACHE = 'bigscreen-remote-v1';
+const CACHE = 'bigscreen-remote-v2';
 
 const PRECACHE = [
   './',
   './index.html',
-  './css/style.css',
   './js/app.js',
   './manifest.webmanifest',
   './icons/icon.svg',
