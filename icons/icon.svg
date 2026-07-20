@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3daee9"/>
+      <stop offset="100%" stop-color="#2980b9"/>
+    </linearGradient>
+  </defs>
+  <!-- Background squircle -->
+  <rect width="512" height="512" rx="115" fill="url(#bg)"/>
+  <!-- Remote body -->
+  <rect x="176" y="76" width="160" height="360" rx="80" fill="#16191d"/>
+  <!-- Power dot -->
+  <circle cx="256" cy="126" r="10" fill="#da4453"/>
+  <!-- D-pad ring -->
+  <circle cx="256" cy="236" r="52" fill="none" stroke="#fcfcfc" stroke-width="10"/>
+  <!-- OK dot -->
+  <circle cx="256" cy="236" r="18" fill="#3daee9"/>
+  <!-- Media buttons -->
+  <rect x="216" y="330" width="32" height="14" rx="7" fill="#31363b"/>
+  <rect x="264" y="330" width="32" height="14" rx="7" fill="#31363b"/>
+  <!-- Bottom pill -->
+  <rect x="228" y="360" width="56" height="14" rx="7" fill="#31363b"/>
+</svg>
