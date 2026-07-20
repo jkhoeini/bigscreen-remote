@@ -104,7 +104,10 @@ class AuthError extends Error { constructor() { super("auth-failed"); this.name 
 export const connect = async (httpUrl, secret) => {
   const url = new URL("/ws", httpUrl);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  console.log("[remote] connecting to", url.href);
   const ws = new WebSocket(url);
+  ws.addEventListener("error", (e) => console.error("[remote] ws error", e));
+  ws.addEventListener("close", (e) => console.log("[remote] ws close", e.code, e.reason));
   await new Promise((res, rej) => { ws.onopen = res; ws.onerror = () => rej(new Error("connection-failed")); });
   const challenge = await nextMessage(ws);
   ws.send(await hmacSha256(challenge, secret));
@@ -168,6 +171,7 @@ export const createSession = (httpUrl, secret, onChange) => {
         timer = setTimeout(tryConnect, backoff());
       });
     } catch (e) {
+      console.error("[remote] connect failed:", e.message, "attempt:", attempt);
       if (my !== epoch) return;
       conn = null;
       if (e instanceof AuthError) { onChange("auth-failed"); return; }
