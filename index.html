@@ -72,8 +72,8 @@
 
     #app {
       height: 100%;
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-rows: 2.5rem 1fr 18rem 4.5rem;
       gap: 14px;
       padding: calc(env(safe-area-inset-top, 0px) + 8px)
                calc(env(safe-area-inset-right, 0px) + 16px)
@@ -121,8 +121,6 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      min-height: 40px;
-      flex: none;
     }
 
     #status {
@@ -187,12 +185,17 @@
       background: var(--bg-surface);
     }
 
-    /* ============ Setup form ============ */
+    /* ============ Setup overlay ============ */
     .setup-wrap {
-      flex: 1;
+      position: fixed;
+      inset: 0;
+      z-index: 10;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: color-mix(in srgb, var(--bg-base) 92%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .setup-form {
@@ -247,10 +250,31 @@
       box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 20%, transparent);
     }
 
+    .setup-form .btn-trust {
+      min-height: 44px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-surface);
+      border: 1px solid var(--btn-border);
+    }
+
+    .setup-form .btn-trust:active {
+      transform: scale(.97);
+      color: var(--text-primary);
+      border-color: var(--accent-dim);
+    }
+
+    .trust-hint {
+      font-size: 11px;
+      color: var(--text-disabled);
+      line-height: 1.4;
+      text-align: center;
+    }
+
     /* ============ Touchpad ============ */
     #touchpad {
-      flex: 1 1 auto;
-      min-height: 110px;
       touch-action: none;
       border-radius: 24px;
       border: 1px solid var(--btn-border);
@@ -277,44 +301,14 @@
         0 0 26px color-mix(in srgb, var(--accent) 20%, transparent);
     }
 
-    /* ============ Keyboard panel ============ */
-    #keyboard-panel {
-      display: flex;
-      gap: 10px;
-      flex: none;
-    }
-
+    /* ============ Hidden keyboard input ============ */
     #kb-input {
-      flex: 1;
-      min-width: 0;
-      height: 52px;
-      padding: 0 14px;
-      border-radius: 14px;
-      border: 1px solid var(--btn-border);
-      background: var(--bg-inset);
-      color: var(--text-primary);
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px;
       font-size: 16px;
-      caret-color: var(--accent);
-      -webkit-user-select: text;
-      user-select: text;
-      box-shadow: inset 0 2px 6px color-mix(in srgb, #000000 50%, transparent);
-    }
-    #kb-input::placeholder { color: var(--text-disabled); }
-    #kb-input:focus {
-      outline: none;
-      border-color: var(--accent-dim);
-      box-shadow:
-        inset 0 2px 6px color-mix(in srgb, #000000 50%, transparent),
-        0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
-    }
-
-    .kb-key {
-      flex: none;
-      width: 52px;
-      height: 52px;
-      border-radius: 14px;
-      font-size: 20px;
-      color: var(--text-secondary);
+      pointer-events: none;
     }
 
     /* ============ Nav zone: volume rail + 3×3 pad ============ */
@@ -323,7 +317,6 @@
       grid-template-columns: 56px 1fr;
       gap: 14px;
       align-items: stretch;
-      flex: none;
     }
 
     .vol-pill {
@@ -477,8 +470,6 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      min-height: 64px;
-      flex: none;
     }
 
     .media-btn {
@@ -529,9 +520,8 @@
     }
 
     @media (max-height: 700px) {
-      #app { gap: 10px; padding-top: calc(env(safe-area-inset-top, 0px) + 6px); }
-      .top-bar { min-height: 32px; }
-      #touchpad { min-height: 84px; border-radius: 20px; }
+      #app { grid-template-rows: 2rem 1fr 14rem 3.5rem; gap: 10px; padding-top: calc(env(safe-area-inset-top, 0px) + 6px); }
+      #touchpad { border-radius: 20px; }
       .nav-zone { grid-template-columns: 50px 1fr; gap: 10px; }
       .nav-pad { gap: 6px; padding: 8px; border-radius: 28px; }
       .nav-pad > :nth-child(1) { border-top-left-radius: 22px; }
@@ -541,10 +531,9 @@
       .pad-arrow { font-size: 19px; }
       .pad-corner .glyph { font-size: 16px; }
       .pad-ok { font-size: 15px; }
-      .media-row { min-height: 54px; gap: 8px; }
+      .media-row { gap: 8px; }
       .media-btn { width: 46px; height: 46px; font-size: 17px; }
       .media-play { width: 60px; height: 60px; font-size: 22px; }
-      #kb-input, .kb-key { height: 46px; }
     }
   </style>
 </head>
@@ -555,10 +544,11 @@
         <span class="status-dot"></span><span class="status-label"></span>
       </div>
       <button class="btn btn-gear" data-action="settings" aria-label="Settings">&#x2699;&#xFE0E;</button>
+      <input id="kb-input" type="text" enterkeyhint="send" autocomplete="off"
+             autocapitalize="off" autocorrect="off" spellcheck="false">
     </header>
 
-    <!-- Setup view -->
-    <div class="setup-wrap" data-view="setup">
+    <div class="setup-wrap" id="setup-overlay" hidden>
       <div class="setup-form">
         <label for="host">Server address</label>
         <input id="host" type="url" placeholder="http://rpi:8080" autocomplete="url"
@@ -567,20 +557,14 @@
         <input id="secret" type="text" placeholder="secret" autocomplete="off"
                data-bind="secret-input">
         <button class="btn btn-connect" data-action="connect">Connect</button>
+        <button class="btn btn-trust" data-action="trust-cert">Trust Certificate</button>
+        <p class="trust-hint">Self-signed cert? Tap "Trust Certificate" first, accept the warning, then come back and Connect.</p>
       </div>
     </div>
 
-    <!-- Remote view -->
-    <div id="touchpad" data-view="remote" hidden aria-label="Touchpad"></div>
+    <div id="touchpad" aria-label="Touchpad"></div>
 
-    <div id="keyboard-panel" data-view="remote" hidden>
-      <input id="kb-input" type="text" enterkeyhint="send" autocomplete="off"
-             autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Type on TV&#8230;">
-      <button class="btn kb-key" data-key="BACKSPACE" data-repeat="true" aria-label="Backspace">&#x232B;</button>
-      <button class="btn kb-key" data-key="DELETE" aria-label="Delete">&#x2326;</button>
-    </div>
-
-    <section class="nav-zone" data-view="remote" hidden>
+    <section class="nav-zone">
       <div class="vol-pill">
         <button class="btn vol-btn" data-key="VOLUME_UP" data-repeat="true" aria-label="Volume up">+</button>
         <span class="vol-label">VOL</span>
@@ -608,7 +592,7 @@
       </div>
     </section>
 
-    <footer class="media-row" data-view="remote" hidden>
+    <footer class="media-row">
       <button class="btn media-btn" data-action="keyboard" aria-label="Keyboard">&#x2328;&#xFE0E;</button>
       <button class="btn media-btn" data-key="MEDIA_PREV_TRACK" aria-label="Previous">&#x23EE;&#xFE0E;</button>
       <button class="btn media-play" data-key="MEDIA_PLAY_PAUSE" aria-label="Play / Pause">&#x23EF;&#xFE0E;</button>

@@ -25,31 +25,17 @@ const saveSettings = (patch) =>
 // ============================================================
 
 const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => document.querySelectorAll(sel);
 
-let state = { phase: "disconnected", mode: "dpad", config: null, kbOpen: false };
+let state = { phase: "disconnected", config: null };
 const update = (patch) => { state = { ...state, ...patch }; render(state); };
+
+const showSetup = () => { $("#setup-overlay").hidden = false; };
+const hideSetup = () => { $("#setup-overlay").hidden = true; };
 
 const render = (s) => {
   const status = $("#status");
   const phaseClass = s.phase === "reconnecting" ? "connecting" : s.phase;
   status.className = phaseClass;
-
-  const setupEls = $$("[data-view='setup']");
-  const remoteEls = $$("[data-view='remote']");
-  const isConnected = s.phase === "connected";
-
-  setupEls.forEach((el) => { el.hidden = isConnected; });
-  remoteEls.forEach((el) => {
-    if (el.id === "keyboard-panel") {
-      el.hidden = !(isConnected && s.kbOpen);
-      return;
-    }
-    el.hidden = !isConnected;
-  });
-
-  const kbBtn = $("[data-action='keyboard']");
-  if (kbBtn) kbBtn.classList.toggle("is-active", s.kbOpen && isConnected);
 };
 
 let session = null;
@@ -58,6 +44,7 @@ const startSession = (host, secret) => {
   if (session) session.stop();
   session = createSession(host, secret, (phase, config) => {
     update({ phase, ...(config ? { config } : {}) });
+    if (phase === "connected") hideSetup();
   });
   session.start();
 };
@@ -74,8 +61,10 @@ const handleConnect = () => {
 };
 
 const handleSettings = () => {
-  if (session) session.stop();
-  update({ phase: "disconnected", kbOpen: false });
+  const saved = loadSettings();
+  $("[data-bind='host-input']").value = saved.host ?? "";
+  $("[data-bind='secret-input']").value = saved.secret ?? "";
+  showSetup();
 };
 
 const sendForKey = (name) => {
@@ -203,16 +192,20 @@ const bindTouchpad = () => {
 
 const bindKeyboard = () => {
   const kbBtn = $("[data-action='keyboard']");
-  const panel = $("#keyboard-panel");
   const input = $("#kb-input");
-  if (!kbBtn || !panel || !input) return;
+  if (!kbBtn || !input) return;
 
   kbBtn.addEventListener("click", () => {
-    const opening = !state.kbOpen;
-    update({ kbOpen: opening });
-    if (opening) setTimeout(() => input.focus(), 50);
-    else input.blur();
+    if (document.activeElement === input) {
+      input.blur();
+      kbBtn.classList.remove("is-active");
+    } else {
+      input.focus();
+      kbBtn.classList.add("is-active");
+    }
   });
+
+  input.addEventListener("blur", () => kbBtn.classList.remove("is-active"));
 
   input.addEventListener("input", () => {
     const text = input.value;
@@ -247,6 +240,11 @@ const bindEvents = () => {
 
   $("[data-action='settings']").addEventListener("click", handleSettings);
 
+  $("[data-action='trust-cert']").addEventListener("click", () => {
+    const host = $("[data-bind='host-input']").value.trim();
+    if (host) window.open(host, "_blank");
+  });
+
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible" && session) session.reconnectNow();
   });
@@ -265,6 +263,8 @@ const init = () => {
     $("[data-bind='host-input']").value = saved.host;
     $("[data-bind='secret-input']").value = saved.secret ?? "";
     startSession(saved.host, saved.secret ?? "");
+  } else {
+    showSetup();
   }
 };
 
